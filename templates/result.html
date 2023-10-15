@@ -4,17 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
-    <title>Stock Portfolio Value</title>
+    <title>Portfolio Result</title>
 </head>
 <body class="bg-light py-5">
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header bg-success text-white">Result</div>
+                <div class="card-header bg-success text-white">Portfolio Value Result</div>
                 <div class="card-body">
-                    <h2>Total Portfolio Value for User {{ user_id }}: ${{ value | round(2) }}</h2>
-                    <a href="/" class="btn btn-primary mt-3">Back to Home</a>
+                    <h4>User Information:</h4>
+                    <p><strong>Username:</strong> {{ user }}</p>
+                    <p><strong>User ID:</strong> {{ user_id }}</p>
+                    <hr>
+                    <h4>Portfolio Value:</h4>
+                    <p><strong>Total Value:</strong> {{ value }} USD</p>
+                    <a href="/" class="btn btn-primary">Go Back</a>
                 </div>
             </div>
         </div>
