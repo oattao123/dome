@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, session
+from flask import Flask, render_template, request, redirect, url_for, session, make_response
 import mysql.connector
 import requests
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -18,6 +18,10 @@ class StockPortfolioApp:
         self.app.route('/add_stock', methods=['POST'])(self.add_stock)
         self.app.route('/delete_stock', methods=['POST'])(self.delete_stock)
         self.app.route('/dashboard')(self.dashboard)
+        self.app.route('/show_result/<int:user_id>')(self.show_result)
+        self.app.route('/some_route')(self.some_route)
+        self.app.route('/change_password', methods=['GET', 'POST'])(self.change_password)
+
 
     def __enter__(self):
         return self
@@ -63,7 +67,7 @@ class StockPortfolioApp:
                 return "Username already exists!", 400
 
         return render_template('sign_in.html')
-
+    
     def calculate(self):
         username = request.form['username']
         password = request.form['password']
@@ -74,8 +78,9 @@ class StockPortfolioApp:
         user_id, portfolio_value = self.db_manager.calculate_user_portfolio_value(username)
         session['user_id'] = user_id  # Storing user_id in session
 
-        stocks = self.db_manager.get_stocks(user_id)
-        return render_template('result.html', user_id=user_id, user=username, value=portfolio_value, stocks=stocks)
+        #stocks = self.db_manager.get_stocks(user_id)
+        stocks = app_instance.db_manager.get_stocks(user_id)
+        return render_template('calculate.html', user_id=user_id, user=username, value=portfolio_value, stocks=stocks)
 
     def add_stock(self):
         if 'user_id' not in session:
@@ -115,7 +120,13 @@ class StockPortfolioApp:
         else:
             return "Stock does not exist!", 400
 
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('some_function'))
+    
+    def some_route():
+        response = make_response(render_template('some_template.html'))
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        return response
     
     def dashboard(self):
         if 'user_id' not in session:
@@ -125,6 +136,41 @@ class StockPortfolioApp:
         stocks = self.db_manager.get_stocks(user_id)
         # สมมติว่าคุณมี template ชื่อ dashboard.html เพื่อแสดงรายการข้อมูล stock
         return render_template('dashboard.html', stocks=stocks)
+    def show_result(user_id):
+        # เรียก function ใน class DatabaseManager เพื่อรับข้อมูล username จากฐานข้อมูลโดยใช้ user_id
+        username = app_instance.db_manager.get_username_by_user_id(user_id)
+        
+        if not username:
+            # Handle error, e.g., user not found
+            return "User not found!", 404
+
+        stocks = app_instance.db_manager.get_stocks(user_id)
+        return render_template('calculate.html', user_id=user_id, user=username, stocks=stocks)
+
+    def change_password(self):
+        if request.method == 'POST':
+            username = request.form['username']
+            current_password = request.form['current_password']
+            new_password = request.form['new_password']
+            confirm_new_password = request.form['confirm_new_password']
+
+            # Authenticate the current password
+            if not self.authenticate_user(username, current_password):
+                return "Current password is incorrect!", 403
+
+            # Check if new password matches the confirmation
+            if new_password != confirm_new_password:
+                return "New password and confirmation do not match!", 400
+
+            # Update the password in the database
+            hashed_new_password = generate_password_hash(new_password)
+            self.db_manager.update_password(username, hashed_new_password)
+            return "Password updated successfully!", 200
+
+        return render_template('change_password.html')
+
+
+
 
 
 class DatabaseManager:
@@ -211,6 +257,20 @@ class DatabaseManager:
             total_value += stock_price * stock_quantity
 
         return user_id, total_value
+    def get_username_by_user_id(self, user_id):
+        self.cursor.execute("SELECT username FROM users WHERE user_id=%s", (user_id,))
+        result = self.cursor.fetchone()
+        if result:
+            return result[0]
+        return None
+    def update_password(self, username, hashed_new_password):
+        try:
+            self.cursor.execute("UPDATE users SET password=%s WHERE username=%s", (hashed_new_password, username))
+            self.connection.commit()
+        except Exception as e:
+            print(f"Error updating password: {e}")
+
+
 
 
 

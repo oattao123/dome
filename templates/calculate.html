@@ -26,6 +26,12 @@
                         {% endfor %}
                     </ul>
 
+                    <!-- Add the message here -->
+                    <p>Press the button to resubmit the data needed to load the page.</p>
+
+                    <!-- Add JavaScript code to redirect without resubmitting the form -->
+                    <button id="reloadButton" class="btn btn-primary">Reload</button>
+
                     <form action="/add_stock" method="post" class="mb-3">
                         <h5>Add Stock:</h5>
                         <div class="form-group">
@@ -57,5 +63,13 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById("reloadButton").addEventListener("click", function() {
+        // Redirect to the same URL without resubmitting the form data
+        window.location.href = window.location.href;
+    });
+</script>
+
 </body>
 </html>
